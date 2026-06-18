@@ -4,6 +4,14 @@ Local Codex skills for recurring engineering workflows.
 
 ## Included skills
 
+### `complexity-analyzer`
+
+Reviews implementation tickets for scope, risk, dependencies, and reviewability, then proposes or applies decompositions before rerunning `$hydrate-issues` on affected tickets.
+
+Use it after issues are generated or imported and before assigning them to a developer or coding agent.
+
+The skill is defined in [`complexity-analyzer/SKILL.md`](complexity-analyzer/SKILL.md). The OpenAI agent display metadata lives in [`complexity-analyzer/agents/openai.yaml`](complexity-analyzer/agents/openai.yaml).
+
 ### `hydrate-issues`
 
 Reviews generated implementation issues against available source material, then enriches them with implementation context, source references, readiness, dependencies, acceptance criteria, tests, non-goals, and open questions.
@@ -28,6 +36,11 @@ The skill preserves issue scope. It should clarify and source what already exist
 ## Repository layout
 
 ```text
+complexity-analyzer/
+  SKILL.md
+  agents/
+    openai.yaml
+
 hydrate-issues/
   SKILL.md
   agents/

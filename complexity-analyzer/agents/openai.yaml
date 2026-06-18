@@ -1,0 +1,4 @@
+interface:
+  display_name: "Complexity Analyzer"
+  short_description: "Decompose oversized implementation tickets"
+  default_prompt: "Use $complexity-analyzer to review these implementation tickets, decompose risky ones, and rerun $hydrate-issues on the affected ticket set."
