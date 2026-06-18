@@ -24,6 +24,7 @@ Use as many as are available:
 * PRD, `CONTEXT.md`, architecture docs, API docs, schema docs, design notes, and decision notes
 * Repository evidence and implementation context
 * Permission model for whether tickets may be created, edited, linked, closed, or archived
+* User-selected split threshold from `0` to `21`, where tickets scoring greater than the threshold should be split unless a do-not-decompose rule applies
 * Existing `$hydrate-issues` skill
 
 Do not assume unavailable inputs exist. If tracker write access is not explicitly granted, operate in dry-run mode and return a proposed decomposition plan only.
@@ -47,6 +48,10 @@ Do not invent requirements, add nice-to-have work, create new product scope, sil
 
 Score each dimension from `0` to `3`.
 
+Before applying split decisions, ask the user for a split threshold `x` from `0` to `21`. Tickets with total complexity score greater than `x` should be decomposed unless a do-not-decompose rule applies.
+
+If the user already supplied a threshold, use it. If no threshold is available and the user cannot be asked, default to `10` and state that assumption in the output.
+
 | Dimension | 0 | 1 | 2 | 3 |
 | --- | --- | --- | --- | --- |
 | Scope breadth | One narrow behaviour | Few related behaviours | Multiple behaviours in one flow | Multiple flows, actors, or responsibilities |
@@ -59,12 +64,12 @@ Score each dimension from `0` to `3`.
 
 Bands:
 
-* `0-5`: Low complexity. Keep as one ticket.
-* `6-10`: Medium complexity. Keep unless there is a clean decomposition.
-* `11-15`: High complexity. Decomposition recommended.
-* `16+`: Very high complexity. Decomposition required unless explicitly rejected.
+* `0-5`: Low complexity. Usually keep as one ticket.
+* `6-10`: Medium complexity. Usually keep unless there is a clean decomposition.
+* `11-15`: High complexity. Usually decompose.
+* `16+`: Very high complexity. Usually decompose unless explicitly rejected.
 
-Override the score when there is an obvious atomicity problem, such as "build the new billing flow".
+Use the user's threshold as the controlling split line: `score > threshold` means split, subject to hard triggers, do-not-decompose rules, and judgement. Override the score when there is an obvious atomicity problem, such as "build the new billing flow".
 
 ## Hard Triggers
 
@@ -184,6 +189,20 @@ If dependency transfer cannot be determined safely, include:
 
 `Dependency review required: some links from the original ticket could not be safely mapped to replacement tickets without additional context.`
 
+## Question Resolution
+
+When analysis finds blocking questions, missing decisions, or "more answers needed" items:
+
+* Present the questions to the user before applying ticket updates.
+* Ask only questions that cannot be answered through normal repository or source inspection.
+* Ask in implementation order: product contract, user-visible behaviour, data/API/schema, dependency sequencing, then testing or rollout.
+* Include the ticket ID, why the answer blocks decomposition or hydration, and the decision needed.
+* Do not update tickets with guessed answers.
+* After the user answers, treat the response as a conversation decision and use it to update the affected tickets with the right context.
+* If the user cannot or does not answer a blocking question, mark the affected ticket `Not ready` and record the question in the ticket instead of decomposing speculatively.
+
+In apply mode, resolve blocking questions before creating, editing, archiving, closing, or hydrating tickets. Non-blocking questions may be recorded on the ticket without stopping the update.
+
 ## Write Policy
 
 Default to dry-run mode unless the user explicitly asks to update the tracker.
@@ -213,14 +232,16 @@ The main agent remains responsible for final judgement. Do not use subagents for
 
 1. Load tickets: ID, title, description, acceptance criteria, labels, status, parent/epic, dependencies, comments, estimates, and hydration state.
 2. Load source context: PRD, `CONTEXT.md`, docs, decisions, repository evidence. Use sources only to understand scope and boundaries.
-3. Build a requirement-to-ticket map. Report uncovered, duplicated, unsupported, misplaced, or hidden requirements. Do not silently attach uncovered requirements to the nearest ticket.
-4. Score each ticket with the rubric. Identify complexity drivers, atomicity, blockers, and whether to keep, hydrate, decompose, or mark not ready.
-5. Classify each ticket as `Keep as-is`, `Keep but hydrate`, `Edit scope and hydrate`, `Decompose recommended`, `Decompose required`, `Archive and replace recommended`, `Archive and replace required`, or `Not ready`.
-6. For decompositions, propose original ticket treatment, replacement titles and owned scopes, moved acceptance criteria, dependencies, non-goals, blocking questions, source references, and dependency graph changes.
-7. Check quality: no source-backed requirement lost, no new requirement invented, no overlap, replacements independently testable, dependencies explicit, original no longer duplicates replacement scope, complexity meaningfully reduced, audit trail preserved.
-8. Apply only if permitted: update original, create replacements, link, add supersession links, add dependency links, add a short decomposition comment, preserve labels/milestone/epic where appropriate, and avoid changing priority/status/sprint/estimate/assignee unless instructed.
-9. Rerun `$hydrate-issues` on affected tickets only: original edited ticket, replacements, and directly linked tickets whose dependency or scope changed.
-10. Final consistency pass: no duplicate scope, dependencies clear, acceptance criteria testable, source references preserved, readiness accurate, blockers visible, scope preserved, changed tickets included in hydration target set, no unrelated backlog changes.
+3. Get or ask for the split threshold. If unavailable, assume `10` and record the assumption.
+4. Build a requirement-to-ticket map. Report uncovered, duplicated, unsupported, misplaced, or hidden requirements. Do not silently attach uncovered requirements to the nearest ticket.
+5. Score each ticket with the rubric. Identify complexity drivers, atomicity, blockers, and whether `score > threshold`.
+6. Classify each ticket as `Keep as-is`, `Keep but hydrate`, `Edit scope and hydrate`, `Decompose recommended`, `Decompose required`, `Archive and replace recommended`, `Archive and replace required`, or `Not ready`.
+7. Collect blocking questions. Ask the user to resolve them before apply-mode changes; mark tickets `Not ready` when answers are unavailable.
+8. For decompositions, propose original ticket treatment, replacement titles and owned scopes, moved acceptance criteria, dependencies, non-goals, blocking questions, source references, and dependency graph changes.
+9. Check quality: no source-backed requirement lost, no new requirement invented, no overlap, replacements independently testable, dependencies explicit, original no longer duplicates replacement scope, complexity meaningfully reduced, audit trail preserved.
+10. Apply only if permitted and blocking questions are resolved: update original, create replacements, link, add supersession links, add dependency links, add a short decomposition comment, preserve labels/milestone/epic where appropriate, and avoid changing priority/status/sprint/estimate/assignee unless instructed.
+11. Rerun `$hydrate-issues` on affected tickets only: original edited ticket, replacements, and directly linked tickets whose dependency or scope changed.
+12. Final consistency pass: no duplicate scope, dependencies clear, acceptance criteria testable, source references preserved, readiness accurate, blockers visible, scope preserved, changed tickets included in hydration target set, no unrelated backlog changes.
 
 ## Output Format
 
@@ -230,6 +251,7 @@ Start with:
 # Complexity analysis summary
 
 * Total tickets analyzed: <number>
+* Split threshold: <number or assumed number>
 * Keep as-is: <number>
 * Keep but hydrate: <number>
 * Edit scope and hydrate: <number>
@@ -252,6 +274,8 @@ For each ticket:
 ## Complexity score
 
 <score>/21
+
+Split threshold: <threshold>. `score > threshold`: <yes/no>.
 
 | Dimension | Score | Reason |
 | --- | ---: | --- |
@@ -347,6 +371,15 @@ If there are no dependency changes, write: None identified.
 Rerun /hydrate-issues on <affected tickets>.
 ```
 
+If blocking questions need user answers before tickets can be updated, include:
+
+```markdown
+## Questions to resolve before ticket updates
+
+1. <ticket id>: <question> - <why this blocks decomposition or hydration>
+2. <ticket id>: <question> - <why this blocks decomposition or hydration>
+```
+
 If any decomposition is needed, include `## Final decomposition plan` with original ticket, treatment, replacement tickets, required links, dependency graph changes, and hydration target.
 
 If apply mode made changes, include `## Final output after apply mode` with tickets updated, created, archived/superseded, links added, labels added, dependency changes made, tickets passed to `$hydrate-issues`, and tickets still blocked.
@@ -357,6 +390,7 @@ Always include:
 ## Final summary
 
 * Total tickets analyzed: <number>
+* Split threshold: <number or assumed number>
 * Tickets kept: <number>
 * Tickets decomposed: <number>
 * Tickets archived and replaced: <number>
@@ -378,6 +412,7 @@ Before returning or applying changes, confirm:
 * Supersession links are explicit when archive-and-replace is used.
 * Dependency graph changes are documented.
 * Unsafe dependency transfers are marked for manual review.
+* Blocking questions were either answered and applied as conversation decisions or left visible on `Not ready` tickets.
 * Every changed or new ticket is included in the `$hydrate-issues` target set.
 * No unrelated backlog items were changed.
 * No ticket was archived without an audit trail.
