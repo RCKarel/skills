@@ -506,6 +506,16 @@ Provide practical guidance using the project's existing test patterns where know
 
 Do not require a class of test that is irrelevant to the issue.
 
+When the source issue already includes a strong testing strategy, preserve and sharpen it instead of replacing it with generic test advice. Capture:
+
+* The smallest failing tests expected before implementation, especially when TDD is required.
+* A coverage matrix for each meaningful dispatch path, overload, mode, role, state, or data shape.
+* Boundary and error cases with exact inputs and expected outputs or error codes.
+* Regression cases that must stay green, including named historical bugs, corpus IDs, passlist entries, snapshots, goldens, or fixture names.
+* The required test layers, such as unit, integration, end-to-end, migration, contract, or drift tests, only when supported by the source or existing project practice.
+* Exact verification commands and quality gates when known, such as typecheck, lint, format, test, clippy, or build commands.
+* Explicit exclusions, such as tests that should not be added because that scenario remains intentionally unsupported.
+
 ### Unit tests
 
 List expected unit-level coverage, including relevant:
@@ -612,6 +622,7 @@ If there are no open questions, write:
 * Preserve issue scope and ownership boundaries.
 * Preserve valid original acceptance criteria.
 * Add testable acceptance criteria.
+* Preserve source-backed testing strategy details, including exact examples, edge cases, regression IDs, and required quality gates.
 * Identify dependencies and sequencing.
 * Distinguish observed behaviour from intended behaviour.
 * Mark blocked issues as `Not ready`.
@@ -633,6 +644,7 @@ If there are no open questions, write:
 * Do not create, merge, split, or reorder issues unless explicitly instructed.
 * Do not assign estimates, owners, or priorities without evidence.
 * Do not turn generic best practices into acceptance criteria.
+* Do not replace precise source-backed test requirements with generic unit/integration/e2e boilerplate.
 * Do not claim that a file or component is affected without verifying the connection.
 * Do not mark an issue `Not ready` for questions that normal implementation exploration can answer.
 * Do not conceal conflicts between documentation and code.
