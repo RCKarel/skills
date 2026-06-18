@@ -147,6 +147,21 @@ When a title has a clear typo or is too vague to identify the work, it may be im
 
 ## Process
 
+### 0. Find the issue destination
+
+Before hydrating issues, determine where the issues live and how they can be updated.
+
+Prefer an existing issue tracker integration over loose markdown output:
+
+1. Look for configured MCP tools or resources for GitHub, GitLab, Jira, Linear, or the project's issue tracker.
+2. Look for installed and authenticated CLIs such as `gh`, `glab`, or `jira`.
+3. Use repository evidence to identify the tracker, such as git remotes, `.github/`, `.gitlab/`, Jira project keys in docs, or issue links in planning files.
+4. If a tracker integration is available and the user asked to update issues, update the existing issues in place.
+5. If no tracker integration is available, look for markdown issue files in the repository, such as `issues/`, `docs/issues/`, `tickets/`, or planning docs, and update those files when they clearly correspond to the supplied issues.
+6. If neither a tracker integration nor matching markdown files are available, return the hydrated issues as markdown.
+
+Do not install new CLIs or create new tracker integrations as part of hydration unless explicitly asked.
+
 ### 1. Inventory the available sources
 
 Identify:
@@ -155,6 +170,7 @@ Identify:
 * Their versions or dates, where known
 * Whether the repository is available
 * Which branch or commit is being inspected
+* Which issue tracker integration, CLI, MCP server, or markdown issue files are available
 * Whether conversation decisions may supersede written documents
 * Any sources that appear stale or contradictory
 
@@ -665,6 +681,8 @@ If changing a title, keep the original title visible as:
 `Original title: <original title>`
 
 Do not create additional implementation issues unless explicitly requested.
+
+If issues were updated in a tracker or markdown files, state where they were written. If no update path was available, state that the hydrated issues are returned as markdown only.
 
 At the end, include:
 
